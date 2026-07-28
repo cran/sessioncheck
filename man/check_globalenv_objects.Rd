@@ -7,7 +7,7 @@
 check_globalenv_objects(action = "warn", allow_globalenv_objects = NULL)
 }
 \arguments{
-\item{action}{Behaviour to take if the status is not clean. Possible values are
+\item{action}{Behavior to take if the status is not clean. Possible values are
 "error", "warn", "message", and "none". The default is \code{action = "warn"}.}
 
 \item{allow_globalenv_objects}{Character vector containing names of objects
@@ -34,7 +34,6 @@ check_globalenv_objects(action = "message")
 \seealso{
 \code{\link[=check_attached_packages]{check_attached_packages()}},
 \code{\link[=check_loaded_namespaces]{check_loaded_namespaces()}},
-\code{\link[=check_globalenv_objects]{check_globalenv_objects()}},
 \code{\link[=check_attached_environments]{check_attached_environments()}},
 \code{\link[=check_sessiontime]{check_sessiontime()}},
 \code{\link[=check_required_options]{check_required_options()}},

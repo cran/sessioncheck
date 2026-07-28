@@ -7,7 +7,7 @@
 check_required_sysenv(action = "warn", required_sysenv = NULL)
 }
 \arguments{
-\item{action}{Behaviour to take if the status is not clean. Possible values are
+\item{action}{Behavior to take if the status is not clean. Possible values are
 "error", "warn", "message", and "none". The default is \code{action = "warn"}.}
 
 \item{required_sysenv}{A named list of required system environment variables.
@@ -32,6 +32,5 @@ check_required_sysenv(action = "message", required_sysenv = list(R_TEST = "value
 \code{\link[=check_attached_environments]{check_attached_environments()}},
 \code{\link[=check_sessiontime]{check_sessiontime()}},
 \code{\link[=check_required_options]{check_required_options()}},
-\code{\link[=check_required_locale]{check_required_locale()}},
-\code{\link[=check_required_sysenv]{check_required_sysenv()}}
+\code{\link[=check_required_locale]{check_required_locale()}}
 }

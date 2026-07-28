@@ -7,7 +7,7 @@
 check_loaded_namespaces(action = "warn", allow_loaded_namespaces = NULL)
 }
 \arguments{
-\item{action}{Behaviour to take if the status is not clean. Possible values are
+\item{action}{Behavior to take if the status is not clean. Possible values are
 "error", "warn", "message", and "none". The default is \code{action = "warn"}.}
 
 \item{allow_loaded_namespaces}{Character vector containing names of packages that
@@ -21,6 +21,7 @@ Individual session check function that inspects the loaded namespaces.
 Session checkers can produce errors, warnings, or messages if requested.
 }
 \details{
+This checker inspects the list of loaded namespaces
 (packages that have been loaded but not attached). Regardless of the value of
 \code{allow_loaded_namespaces}, R packages that have "base" priority (e.g., \strong{base}, \strong{utils}, and
 \strong{grDevices}) do not trigger an action, nor does the \strong{sessioncheck} package itself,
@@ -32,7 +33,6 @@ check_loaded_namespaces(action = "message")
 }
 \seealso{
 \code{\link[=check_attached_packages]{check_attached_packages()}},
-\code{\link[=check_loaded_namespaces]{check_loaded_namespaces()}},
 \code{\link[=check_globalenv_objects]{check_globalenv_objects()}},
 \code{\link[=check_attached_environments]{check_attached_environments()}},
 \code{\link[=check_sessiontime]{check_sessiontime()}},

@@ -6,7 +6,7 @@
 #' session could be considered not to be "clean". Session checkers can produce
 #' errors, warnings, or messages if requested.
 #' 
-#' @param action Behaviour to take if the status is not clean. Possible values are 
+#' @param action Behavior to take if the status is not clean. Possible values are 
 #' "error", "warn", "message", and "none". If the user does not specify an action 
 #' the default to set `action = "warn"`.
 #' @param checks Character vector listing the checks to run. If the user does not 
@@ -21,7 +21,7 @@
 #'  
 #' @details
 #' `sessioncheck()` allows the user to apply multiple session checks in a single function. 
-#' The following arguments are recognised via `...`:
+#' The following arguments are recognized via `...`:
 #' 
 #' - `allow_globalenv_objects` is passed to `check_globalenv_objects()`
 #' - `allow_attached_packages` is passed to `check_attached_packages()`
@@ -40,7 +40,8 @@ sessioncheck <- function(
   ...
 ) {
   args <- .parse_args(action = action, checks = checks, ...)
-  .validate_action(action, allow_null = TRUE)
+  .validate_action(args$action, allow_null = TRUE)
+  .validate_checks(args$checks)
   if (is.null(args$action)) args$action <- "warn"
   if (is.null(args$checks)) args$checks <- c("globalenv_objects", "attached_packages", "attached_environments")
 
@@ -62,7 +63,7 @@ sessioncheck <- function(
 #' Individual session check function that inspects the attached packages. 
 #' Session checkers can produce errors, warnings, or messages if requested.
 #' 
-#' @param action Behaviour to take if the status is not clean. Possible values are 
+#' @param action Behavior to take if the status is not clean. Possible values are 
 #' "error", "warn", "message", and "none". The default is `action = "warn"`.
 #' @param allow_attached_packages Character vector containing names of packages that 
 #' are "allowed", and will not trigger an action if attached to the search path.
@@ -75,12 +76,11 @@ sessioncheck <- function(
 #' @details
 #' This checker inspects the list of packages that have been
 #' attached to the search path (e.g., via `library()`). Regardless of the value of 
-#' `allow`, R packages that have "base" priority (e.g., **base**, **utils**, and 
-#' **grDevices**) do not trigger an action. When `allow = NULL` these are the only
+#' `allow_attached_packages`, R packages that have "base" priority (e.g., **base**, **utils**, and 
+#' **grDevices**) do not trigger an action. When `allow_attached_packages = NULL` these are the only
 #' packages that will not trigger actions. 
 #' 
 #' @seealso 
-#' [check_attached_packages()], 
 #' [check_loaded_namespaces()],
 #' [check_globalenv_objects()],
 #' [check_attached_environments()],
@@ -104,7 +104,7 @@ check_attached_packages <- function(action = "warn", allow_attached_packages = N
 #' Individual session check function that inspects the loaded namespaces. 
 #' Session checkers can produce errors, warnings, or messages if requested.
 #' 
-#' @param action Behaviour to take if the status is not clean. Possible values are 
+#' @param action Behavior to take if the status is not clean. Possible values are 
 #' "error", "warn", "message", and "none". The default is `action = "warn"`.
 #' @param allow_loaded_namespaces Character vector containing names of packages that 
 #' are "allowed", and will not trigger an action if loaded via namespace.
@@ -115,15 +115,14 @@ check_attached_packages <- function(action = "warn", allow_attached_packages = N
 #' check_loaded_namespaces(action = "message")
 #'  
 #' @details
-# 'This checker inspects the list of loaded namespaces 
+#' This checker inspects the list of loaded namespaces 
 #' (packages that have been loaded but not attached). Regardless of the value of 
 #' `allow_loaded_namespaces`, R packages that have "base" priority (e.g., **base**, **utils**, and 
 #' **grDevices**) do not trigger an action, nor does the **sessioncheck** package itself,
 #' since the package namespace must be loaded in order to call the function.
 #' 
 #' @seealso 
-#' [check_attached_packages()], 
-#' [check_loaded_namespaces()],
+#' [check_attached_packages()],
 #' [check_globalenv_objects()],
 #' [check_attached_environments()],
 #' [check_sessiontime()],
@@ -146,7 +145,7 @@ check_loaded_namespaces <- function(action = "warn", allow_loaded_namespaces = N
 #' environment and the names of attached non-package environments. Session checkers 
 #' can produce errors, warnings, or messages if requested.
 #' 
-#' @param action Behaviour to take if the status is not clean. Possible values are 
+#' @param action Behavior to take if the status is not clean. Possible values are 
 #' "error", "warn", "message", and "none". The default is `action = "warn"`.
 #' @param allow_globalenv_objects Character vector containing names of objects
 #' that are "allowed", and will not trigger an action.
@@ -163,9 +162,8 @@ check_loaded_namespaces <- function(action = "warn", allow_loaded_namespaces = N
 #' For example, `.Random.seed` and `.Last.value` do not trigger actions by default.
 #' 
 #' @seealso 
-#' [check_attached_packages()], 
+#' [check_attached_packages()],
 #' [check_loaded_namespaces()],
-#' [check_globalenv_objects()],
 #' [check_attached_environments()],
 #' [check_sessiontime()],
 #' [check_required_options()],
@@ -186,7 +184,7 @@ check_globalenv_objects <- function(action = "warn", allow_globalenv_objects = N
 #' Individual session check function that inspects the names of attached non-package 
 #' environments. Session checkers can produce errors, warnings, or messages if requested.
 #' 
-#' @param action Behaviour to take if the status is not clean. Possible values are 
+#' @param action Behavior to take if the status is not clean. Possible values are 
 #' "error", "warn", "message", and "none". The default is `action = "warn"`.
 #' @param allow_attached_environments Character vector containing names of environments
 #' that are "allowed", and will not trigger an action if attached to the search path.
@@ -199,16 +197,15 @@ check_globalenv_objects <- function(action = "warn", allow_globalenv_objects = N
 #' @details
 #' This checker inspects all environments on the search path. This includes attached 
 #' packages, anything added using `attach()`, and the global environment. When 
-#' `allow_attached_environments = NULL`, package environents do not trigger an
+#' `allow_attached_environments = NULL`, package environments do not trigger an
 #' action, nor do "tools:rstudio", "tools:positron", "tools:callr", or "Autoloads". 
 #' The global environment and the package environment for the **base** package 
 #' never trigger actions.
 #' 
 #' @seealso 
-#' [check_attached_packages()], 
+#' [check_attached_packages()],
 #' [check_loaded_namespaces()],
 #' [check_globalenv_objects()],
-#' [check_attached_environments()],
 #' [check_sessiontime()],
 #' [check_required_options()],
 #' [check_required_locale()],
@@ -228,7 +225,7 @@ check_attached_environments <- function(action = "warn", allow_attached_environm
 #' Individual session check function that inspects the session run time information. 
 #' Session checkers can produce errors, warnings, or messages if requested.
 #' 
-#' @param action Behaviour to take if the status is not clean. Possible values are 
+#' @param action Behavior to take if the status is not clean. Possible values are 
 #' "error", "warn", "message", and "none". The default is `action = "warn"`.
 #' @param max_sessiontime Maximum session time permitted in seconds before the checker 
 #' takes action
@@ -239,11 +236,10 @@ check_attached_environments <- function(action = "warn", allow_attached_environm
 #' check_sessiontime(action = "message")
 #' 
 #' @seealso 
-#' [check_attached_packages()], 
+#' [check_attached_packages()],
 #' [check_loaded_namespaces()],
 #' [check_globalenv_objects()],
 #' [check_attached_environments()],
-#' [check_sessiontime()],
 #' [check_required_options()],
 #' [check_required_locale()],
 #' [check_required_sysenv()]
@@ -262,7 +258,7 @@ check_sessiontime <- function(action = "warn", max_sessiontime = NULL) {
 #' Individual session check function that inspects the options. 
 #' Session checkers can produce errors, warnings, or messages if requested.
 #' 
-#' @param action Behaviour to take if the status is not clean. Possible values are 
+#' @param action Behavior to take if the status is not clean. Possible values are 
 #' "error", "warn", "message", and "none". The default is `action = "warn"`.
 #' @param required_options A named list of required options. If any of these options are 
 #' missing or have different values to the required values, an action is triggered.
@@ -273,12 +269,11 @@ check_sessiontime <- function(action = "warn", max_sessiontime = NULL) {
 #' check_required_options(action = "message", required_options = list(scipen = 0L, max.print = 50L))
 #' 
 #' @seealso 
-#' [check_attached_packages()], 
+#' [check_attached_packages()],
 #' [check_loaded_namespaces()],
 #' [check_globalenv_objects()],
 #' [check_attached_environments()],
 #' [check_sessiontime()],
-#' [check_required_options()],
 #' [check_required_locale()],
 #' [check_required_sysenv()]
 #' 
@@ -296,7 +291,7 @@ check_required_options <- function(action = "warn", required_options = NULL) {
 #' Individual session check function that inspects the locale settings. 
 #' Session checkers can produce errors, warnings, or messages if requested.
 #' 
-#' @param action Behaviour to take if the status is not clean. Possible values are 
+#' @param action Behavior to take if the status is not clean. Possible values are 
 #' "error", "warn", "message", and "none". The default is `action = "warn"`.
 #' @param required_locale A named list of required locale settings. If any of these 
 #' are missing or have different values to the required values, an action is triggered.
@@ -304,16 +299,15 @@ check_required_options <- function(action = "warn", required_options = NULL) {
 #' @returns Invisibly returns an object of class `sessioncheck_status`. 
 #'  
 #' @examples
-#' check_required_locale(action = "message", required = list(LC_TIME = "en_US.UTF-8"))
+#' check_required_locale(action = "message", required_locale = list(LC_TIME = "en_US.UTF-8"))
 #' 
 #' @seealso 
-#' [check_attached_packages()], 
+#' [check_attached_packages()],
 #' [check_loaded_namespaces()],
 #' [check_globalenv_objects()],
 #' [check_attached_environments()],
 #' [check_sessiontime()],
 #' [check_required_options()],
-#' [check_required_locale()],
 #' [check_required_sysenv()]
 #' 
 #' @export
@@ -330,7 +324,7 @@ check_required_locale <- function(action = "warn", required_locale = NULL) {
 #' Individual session check function that inspects system environment variables. 
 #' Session checkers can produce errors, warnings, or messages if requested.
 #' 
-#' @param action Behaviour to take if the status is not clean. Possible values are 
+#' @param action Behavior to take if the status is not clean. Possible values are 
 #' "error", "warn", "message", and "none". The default is `action = "warn"`.
 #' @param required_sysenv A named list of required system environment variables. 
 #' If any of these variables are missing or have different values to the required 
@@ -342,14 +336,13 @@ check_required_locale <- function(action = "warn", required_locale = NULL) {
 #' check_required_sysenv(action = "message", required_sysenv = list(R_TEST = "value"))
 #' 
 #' @seealso 
-#' [check_attached_packages()], 
+#' [check_attached_packages()],
 #' [check_loaded_namespaces()],
 #' [check_globalenv_objects()],
 #' [check_attached_environments()],
 #' [check_sessiontime()],
 #' [check_required_options()],
-#' [check_required_locale()],
-#' [check_required_sysenv()]
+#' [check_required_locale()]
 #' 
 #' @export
 check_required_sysenv <- function(action = "warn", required_sysenv = NULL) {
