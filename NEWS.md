@@ -1,3 +1,46 @@
+# sessioncheck 0.2.0
+
+## Improvements
+
+- Formatted output (from `print()`, `format()`, and messages/warnings raised by
+  `action = "message"`/`"warn"`) is now nicer to read, with a cli-like style.
+
+- Messaging for `sessioncheck()` and the individual `check_*()` functions is more
+  informative and more consistent across checkers, including a clearer distinction
+  between "missing" and "mismatched" for the options/locale/sysenv checks, and a
+  dedicated message for `check_sessiontime()` (#5).
+
+## New features
+
+- Added `compare_sessionstates()`, which reports how two `sessionstate()`
+  snapshots differ -- take a baseline snapshot, do some work, take another,
+  and diff them. Returns an object of class `sessioncheck_sessionstatediff`
+  with `format()`, `print()`, and `as.data.frame()` methods.
+
+- Added `check_working_directory()`, which checks the session's working
+  directory against an expected path (#11).
+
+- Added an `action_on_pass` argument to `sessioncheck()` and the individual
+  `check_*()` functions, allowing a clean result to be confirmed with a message
+  rather than remaining silent (#10).
+
+- Added `sessionstate()`, a companion to `sessioncheck()` intended for use at
+  the *end* of a script as an audit log. It reports platform details (R
+  version, OS, matrix products, locale, timezone, UI/frontend), selected
+  machine information from `Sys.info()`, session timing, RNG state, and an
+  inventory of attached and loaded-namespace packages, similar to
+  `sessioninfo::session_info()`. Returns an object of class
+  `sessioncheck_sessionstate` with `format()`, `print()`, and
+  `as.data.frame()` methods.
+
+## Bug fixes
+
+- Fixed `.get_locale_list()` (used by `check_required_locale()`) to handle the
+  case where `Sys.getlocale()` returns a single unprefixed value instead of the
+  usual `"CATEGORY=value;..."` format, which happens when every locale category
+  shares the same setting. Previously this caused every requested category to
+  be misreported as missing.
+
 # sessioncheck 0.1.1
 
 ## Bug fixes

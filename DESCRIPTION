@@ -1,6 +1,6 @@
 Package: sessioncheck
 Title: Checks Session Status
-Version: 0.1.1
+Version: 0.2.0
 Authors@R: c(
               person("Danielle", "Navarro", , "djnavarro@protonmail.com", role = c("aut", "cre", "cph"), comment = c(ORCID = "0000-0001-7648-6578")),
               person("Meghan", "Harris", , "meghanha01@gmail.com", role = c("ctb"), comment = c(ORCID = "0000-0003-3922-8101"))
@@ -12,22 +12,23 @@ Description:
     system environment variables. Intended as a safer replacement for the
     common 'rm(list = ls())' idiom: rather than silently wiping the global
     environment, sessioncheck() surfaces problems so the user can make an
-    informed decision.
+    informed decision. The package also supplies tools for documenting the
+    session state, to aid in the overall process.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Language: en-US
 URL: https://github.com/djnavarro/sessioncheck,
         https://sessioncheck.djnavarro.net/
 BugReports: https://github.com/djnavarro/sessioncheck/issues
-Suggests: knitr, rmarkdown, spelling, testthat (>= 3.0.0)
+Suggests: knitr, rmarkdown, sessioninfo, spelling, testthat (>= 3.0.0)
 Config/testthat/edition: 3
 Config/Needs/website: djnavarro/waeponwifestre
-Config/roxygen2/version: 8.0.0
+Config/roxygen2/version: 8.1.0
 NeedsCompilation: no
-Packaged: 2026-07-28 23:37:23 UTC; danielle
+Packaged: 2026-09-13 11:22:01 UTC; danielle
 Author: Danielle Navarro [aut, cre, cph] (ORCID:
     <https://orcid.org/0000-0001-7648-6578>),
   Meghan Harris [ctb] (ORCID: <https://orcid.org/0000-0003-3922-8101>)
 Maintainer: Danielle Navarro <djnavarro@protonmail.com>
 Repository: CRAN
-Date/Publication: 2026-07-28 23:50:02 UTC
+Date/Publication: 2026-09-13 11:40:02 UTC

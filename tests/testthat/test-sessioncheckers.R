@@ -123,51 +123,6 @@ test_that("dot-prefixed variables are flaggable but allowed by default in the gl
   rm(.sessioncheck_test, envir = .GlobalEnv)  
 })
 
-test_that(".onLoad creates snapshot in .sessioncheck_env", {
-  ns <- asNamespace("sessioncheck")
-
-  if (!exists(".sessioncheck_env", envir = ns, inherits = FALSE)) {
-    env_ok <- tryCatch(
-      {
-        assign(".sessioncheck_env", new.env(parent = emptyenv()), envir = ns)
-        TRUE
-      },
-      error = function(e) FALSE
-    )
-
-    skip_if_not(
-      env_ok,
-      ".sessioncheck_env cannot be created in package namespace"
-    )
-  }
-
-  # cleanup envs
-  on.exit(
-    {
-      sc_env <- tryCatch(
-        get(".sessioncheck_env", envir = ns),
-        error = function(e) NULL
-      )
-
-      if (!is.null(sc_env)) {
-        tryCatch(rm("snapshot", envir = sc_env), error = function(e) NULL)
-      }
-    },
-    add = TRUE
-  )
-
-  # grab the onload fn to call it
-  onload_fn <- get(".onLoad", envir = ns, inherits = FALSE)
-  onload_fn(NULL, "sessioncheck")
-
-  sc_env <- get(".sessioncheck_env", envir = ns)
-  expect_true(exists("snapshot", envir = sc_env, inherits = FALSE))
-
-  snapshot <- get("snapshot", envir = sc_env)
-  expect_type(snapshot, "list")
-  expect_true(all(c("sys_time", "options", "packages") %in% names(snapshot)))
-})
-
 # session runtime checks ------
 
 test_that("session time elapsed is flaggable", {
@@ -202,6 +157,27 @@ test_that("locale settings are flaggable", {
   expect_true(.get_locale_status(required = list(LC_TIME = "en_US.UTF-8"))$status)
   expect_false(.get_locale_status(required = list(LC_TIME = "C"))$status)
   Sys.setlocale(category = "LC_TIME", locale = old)
+})
+
+# working directory checks ------
+
+test_that("working directory check passes when required_wd is NULL", {
+  ss <- .get_working_directory_status(required = NULL)
+  expect_s3_class(ss, "sessioncheck_status")
+  expect_false(ss$status)
+  expect_equal(names(ss$status), getwd())
+})
+
+test_that("working directory check flags a mismatched path", {
+  expect_true(.get_working_directory_status(required = tempdir())$status)
+})
+
+test_that("working directory check passes when required_wd matches getwd()", {
+  expect_false(.get_working_directory_status(required = getwd())$status)
+})
+
+test_that("working directory check tolerates trailing-slash differences via normalizePath()", {
+  expect_false(.get_working_directory_status(required = paste0(getwd(), "/"))$status)
 })
 
 

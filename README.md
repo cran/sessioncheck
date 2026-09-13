@@ -14,17 +14,25 @@ coverage](https://codecov.io/gh/djnavarro/sessioncheck/graph/badge.svg)](https:/
 status](https://www.r-pkg.org/badges/version/sessioncheck)](https://CRAN.R-project.org/package=sessioncheck)
 <!-- badges: end -->
 
-The goal of **sessioncheck** is to provide simple tools that can be
-called at the top of a script, and produce warnings or errors if it
+The primary goal of **sessioncheck** is to provide simple tools that can
+be called at the top of a script, and produce warnings or errors if it
 detects signs that the script is not being executed in a clean R
 session. The intended user for **sessioncheck** is a beginner or
 intermediate level R user who needs a drop-in replacement for the simple
 but unsafe method of calling `rm(list = ls())` at the top of the script.
+As a secondary goal, it also provides some reporting tools that can be
+useful for describing the state of an R session.
 
 ## Installation
 
-You can install the development version of sessioncheck from
-[GitHub](https://github.com/) with:
+You can install the current CRAN release of sessioncheck with:
+
+``` r
+install.packages("sessioncheck")
+```
+
+Alternatively, you can install the development version of sessioncheck
+from [GitHub](https://github.com/) with:
 
 ``` r
 # install.packages("pak")
@@ -48,4 +56,19 @@ error if a stricter check is required, and additional checks can be
 added if desired. For details on how the checks work and how they can be
 customized see the [get
 started](https://sessioncheck.djnavarro.net/articles/sessioncheck.html)
+page.
+
+In addition to providing tools to check the session state (most useful
+at the start of a script), the package also supplies a `sessionstate()`
+function that reports the current state of a session (most useful at the
+end of a script).
+
+``` r
+sessioncheck::sessionstate()
+```
+
+The `sessionstate()` function is similar in spirit to session
+information functions provided by base R and other packages. For details
+on the similarities and differences between them see the [session state
+reporting](https://sessioncheck.djnavarro.net/articles/sessionstate-reporting.html)
 page.

@@ -12,6 +12,25 @@ test_that("valid `action` arguments are permitted", {
   expect_no_error(.validate_action(action = "none"))
 })
 
+test_that("invalid `action_on_pass` arguments are detected", {
+  expect_error(.validate_action_on_pass(action_on_pass = NULL))
+  expect_error(.validate_action_on_pass(action_on_pass = "warn"))
+  expect_error(.validate_action_on_pass(action_on_pass = "error"))
+  expect_error(.validate_action_on_pass(action_on_pass = "dffgsdf"))
+  expect_error(.validate_action_on_pass(action_on_pass = c("none", "message")))
+  expect_error(.validate_action_on_pass(action_on_pass = 1L))
+})
+
+test_that("valid `action_on_pass` arguments are permitted", {
+  expect_no_error(.validate_action_on_pass(action_on_pass = "none"))
+  expect_no_error(.validate_action_on_pass(action_on_pass = "message"))
+})
+
+test_that("`action_on_pass = NULL` is permitted when allow_null = TRUE", {
+  expect_no_error(.validate_action_on_pass(action_on_pass = NULL, allow_null = TRUE))
+  expect_no_error(.validate_action_on_pass(action_on_pass = "message", allow_null = TRUE))
+})
+
 test_that("invalid `allow` arguments are detected", {
   expect_error(.validate_allow(allow = 1L))
   expect_error(.validate_allow(allow = TRUE))
@@ -38,6 +57,20 @@ test_that("valid `tol` arguments are permitted", {
   expect_no_error(.validate_tol(tol = Inf))
 })
 
+test_that("invalid `required_wd` arguments are detected", {
+  expect_error(.validate_wd(wd = 1L))
+  expect_error(.validate_wd(wd = TRUE))
+  expect_error(.validate_wd(wd = list()))
+  expect_error(.validate_wd(wd = c("a", "b")))
+  expect_error(.validate_wd(wd = NA_character_))
+})
+
+test_that("valid `required_wd` arguments are permitted", {
+  expect_no_error(.validate_wd(wd = NULL))
+  expect_no_error(.validate_wd(wd = "a/b/c"))
+  expect_no_error(.validate_wd(wd = getwd()))
+})
+
 test_that("invalid `checks` arguments are detected", {
   expect_error(.validate_checks(checks = 1L))
   expect_error(.validate_checks(checks = "typo_check"))
@@ -51,7 +84,7 @@ test_that("valid `checks` arguments are permitted", {
   expect_no_error(.validate_checks(checks = c(
     "globalenv_objects", "attached_packages", "loaded_namespaces",
     "attached_environments", "sessiontime", "required_options",
-    "required_locale", "required_sysenv"
+    "required_locale", "required_sysenv", "working_directory"
   )))
 })
 
@@ -68,4 +101,16 @@ test_that("valid `required` arguments are permitted", {
   expect_no_error(.validate_required(required = list()))
   expect_no_error(.validate_required(required = list(a = 1L)))
   expect_no_error(.validate_required(required = list(a = 1L, b = "x")))
+})
+
+test_that("invalid `settings` arguments are detected", {
+  expect_error(.validate_settings(settings = "a"))
+  expect_error(.validate_settings(settings = 1L))
+  expect_error(.validate_settings(settings = TRUE))
+})
+
+test_that("valid `settings` arguments are permitted", {
+  expect_no_error(.validate_settings(settings = NULL))
+  expect_no_error(.validate_settings(settings = list()))
+  expect_no_error(.validate_settings(settings = list(action = "warn")))
 })

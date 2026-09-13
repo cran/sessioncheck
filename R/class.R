@@ -14,30 +14,204 @@ new_sessioncheck <- function(...) {
   structure(list(...), class = "sessioncheck_sessioncheck")
 }
 
+new_sessionstate <- function(platform, locale, matrix, document, machine, git, timing, rng, libpaths, packages, globalenv, attachments) {
+  structure(
+    list(
+      platform = platform, locale = locale, matrix = matrix, document = document, machine = machine,
+      git = git, timing = timing, rng = rng, libpaths = libpaths, packages = packages,
+      globalenv = globalenv, attachments = attachments
+    ),
+    class = "sessioncheck_sessionstate"
+  )
+}
+
+new_sessionstatediff <- function(platform, locale, matrix, document, machine, git, timing, rng, libpaths, packages, globalenv, attachments) {
+  structure(
+    list(
+      platform = platform, locale = locale, matrix = matrix, document = document, machine = machine,
+      git = git, timing = timing, rng = rng, libpaths = libpaths, packages = packages,
+      globalenv = globalenv, attachments = attachments
+    ),
+    class = "sessioncheck_sessionstatediff"
+  )
+}
+
+
+# status message tables ------
+
+# fail-state prefix and pass-state message for each check type, keyed so
+# that a failing check always reads "Unexpected <thing>:" followed by its
+# summary, and a passing check always reads "No unexpected <thing>"
+# instead of the uninformative, one-size-fits-all "[no issues detected]"
+# (see #5 follow-up discussion on message framing consistency)
+.status_prefix <- c(
+  namespace   = "Unexpected namespaces:",
+  package     = "Unexpected packages:",
+  globalenv   = "Unexpected objects in global environment:",
+  attachment  = "Unexpected environments attached:",
+  sessiontime = "Session runtime exceeded:",
+  options     = "Unexpected options:",
+  sysenv      = "Unexpected system environment variables:",
+  locale      = "Unexpected locale settings:",
+  working_directory = "Unexpected working directory:"
+)
+
+.status_clean_message <- c(
+  namespace   = "No unexpected namespaces loaded",
+  package     = "No unexpected packages attached",
+  globalenv   = "No unexpected objects in global environment",
+  attachment  = "No unexpected environments attached",
+  sessiontime = "Session runtime within limits",
+  options     = "No unexpected options detected",
+  sysenv      = "No unexpected system environment variables detected",
+  locale      = "No unexpected locale settings detected",
+  working_directory = "Working directory as expected"
+)
 
 # methods --------
 
 #' Format and print sessioncheck objects
 #'
-#' @param x An object of class `sessioncheck_status` or `sessioncheck_sessioncheck`
+#' @description
+#' S3 `format()`/`print()` methods for the three classes this package
+#' defines. `sessioncheck_status`/`sessioncheck_sessioncheck` objects render
+#' as a one-line-per-check status summary; `sessioncheck_sessionstate`
+#' objects render as a multi-section report, and the arguments below let
+#' that report be filtered down to specific fields or columns per section.
+#'
+#' @param x An object of class `sessioncheck_status`, `sessioncheck_sessioncheck`,
+#' `sessioncheck_sessionstate`, or `sessioncheck_sessionstatediff`
+#' @param changed_only For `sessioncheck_sessionstatediff` objects, whether to
+#' collapse sections/fields with no detected change down to a single "(no
+#' changes)" line (`TRUE` by default) or always show every field. Ignored
+#' for other classes. See Details for how the default is resolved.
+#' @param platform For `sessioncheck_sessionstate` objects, an optional character
+#' vector selecting which platform fields to display (from `"version"`, `"os"`,
+#' `"system"`, `"ui"`, `"tz"`, `"date"`). Defaults to showing all fields.
+#' Ignored for other classes. See Details for how the default is resolved.
+#' @param locale For `sessioncheck_sessionstate` objects, an optional character
+#' vector selecting which locale fields to display (from `"language"`,
+#' `"collate"`, `"ctype"`). Defaults to showing all fields. Ignored for
+#' other classes. See Details for how the default is resolved.
+#' @param matrix For `sessioncheck_sessionstate` objects, an optional character
+#' vector selecting which matrix-products fields to display (from `"blas"`,
+#' `"lapack"`). Defaults to showing all fields. Ignored for other classes.
+#' See Details for how the default is resolved.
+#' @param document For `sessioncheck_sessionstate` objects, an optional character
+#' vector selecting which document-products fields to display (from
+#' `"pandoc"`, `"quarto"`). Defaults to showing all fields. Ignored for
+#' other classes. See Details for how the default is resolved.
+#' @param machine For `sessioncheck_sessionstate` objects, an optional character
+#' vector selecting which machine fields to display (from `"nodename"`,
+#' `"user"`, `"cwd"`). Defaults to showing all fields. Ignored for other
+#' classes. See Details for how the default is resolved.
+#' @param git For `sessioncheck_sessionstate` objects, an optional character
+#' vector selecting which git fields to display (from `"sha"`, `"dirty"`).
+#' Defaults to showing all fields. Ignored for other classes. See Details for
+#' how the default is resolved.
+#' @param timing For `sessioncheck_sessionstate` objects, an optional character
+#' vector selecting which timing fields to display (from `"captured_at"`,
+#' `"elapsed_sec"`). Defaults to showing all fields. Ignored for other classes.
+#' See Details for how the default is resolved.
+#' @param rng For `sessioncheck_sessionstate` objects, an optional character
+#' vector selecting which RNG fields to display (from `"kind"`,
+#' `"normal_kind"`, `"sample_kind"`, `"seed_hash"`). Defaults to showing all
+#' fields. Ignored for other classes. See Details for how the default is
+#' resolved.
+#' @param packages For `sessioncheck_sessionstate` objects, an optional character
+#' vector selecting which package inventory columns to display (see
+#' [sessionstate()] for the full list of columns). Defaults to
+#' `c("package", "attached", "loaded_version", "source")`. For
+#' `sessioncheck_sessionstatediff` objects, the same column selection and
+#' default apply to the `added`/`removed` blocks of the "Packages" section
+#' (the `modified` block always shows its own fixed `field`/`old`/`new`
+#' columns, so `packages` does not affect it). Ignored for other classes.
+#' See Details for how the default is resolved.
+#' @param globalenv For `sessioncheck_sessionstate` objects, an optional
+#' character vector selecting which global environment columns to display
+#' (from `"name"`, `"class"`, `"size"`, `"hash"`). Defaults to
+#' `c("name", "class", "size")` (omitting `"hash"`, a long fingerprint
+#' mainly useful programmatically -- see [compare_sessionstates()]).
+#' For `sessioncheck_sessionstatediff` objects, the same column selection
+#' and default apply to the `added`/`removed` blocks of the "Global
+#' environment" section (the `modified` block is unaffected -- see
+#' `packages` above). Ignored for other classes. See Details for how the
+#' default is resolved, and for how `globalenv_n` separately controls the
+#' number of rows shown for `sessioncheck_sessionstate` objects.
+#' @param globalenv_n For `sessioncheck_sessionstate` objects, an optional
+#' single number giving the maximum number of `globalenv` rows to display,
+#' largest objects first. Defaults to `10`. Ignored for other classes. See
+#' Details for how the default is resolved.
+#' @param attachments For `sessioncheck_sessionstate` objects, an optional
+#' character vector selecting which attached-environment columns to display
+#' (from `"name"`, `"type"`). Defaults to showing all columns. For
+#' `sessioncheck_sessionstatediff` objects, the same column selection
+#' applies to the `added`/`removed` blocks of the "Attached environments"
+#' section (which has no `modified` block at all -- see
+#' [compare_sessionstates()]). Ignored for other classes. See Details for
+#' how the default is resolved.
+#' @param max_rows For `sessioncheck_sessionstatediff` objects, an optional
+#' single number giving the maximum number of rows to display in each
+#' `added`/`removed`/`modified` block of the "Packages", "Global
+#' environment", and "Attached environments" sections. Defaults to `10`.
+#' Ignored for other classes. See Details for how the default is resolved.
 #' @param ... Ignored
 #'
 #' @returns Character vector
+#'
+#' @details
+#' For `sessioncheck_sessionstate` objects, the `platform`/`locale`/`matrix`/
+#' `document`/`machine`/`git`/`timing`/`rng`/`packages`/`globalenv`/
+#' `globalenv_n`/`attachments`
+#' arguments are resolved through the same precedence used elsewhere in the
+#' package: an explicit argument always wins; otherwise,
+#' `getOption("sessioncheck")` is checked for a `sessionstate_platform`,
+#' `sessionstate_locale`, `sessionstate_matrix`, `sessionstate_document`,
+#' `sessionstate_machine`, `sessionstate_git`, `sessionstate_timing`,
+#' `sessionstate_rng`, `sessionstate_packages`, `sessionstate_globalenv`,
+#' `sessionstate_globalenv_n`, or `sessionstate_attachments` field
+#' (respectively); if neither is set, a
+#' built-in default is used (showing every field/column, except for
+#' `packages`, which defaults to
+#' `c("package", "attached", "loaded_version", "source")`,
+#' `globalenv`, which defaults to `c("name", "class", "size")`, and
+#' `globalenv_n`, which defaults to `10`). This selection only affects what
+#' is displayed; it never changes the underlying object, so
+#' [`as.data.frame()`][coercion_methods] always returns the full package
+#' inventory, and `x$globalenv`/`x$attachments` always return their full
+#' data frames, regardless of any selection in effect.
+#'
+#' For `sessioncheck_sessionstatediff` objects, `changed_only`/`packages`/
+#' `globalenv`/`attachments`/`max_rows` are resolved through the same
+#' precedence: an explicit argument always wins; otherwise
+#' `getOption("sessioncheck")` is checked for a
+#' `sessionstatediff_changed_only`, `sessionstatediff_packages`,
+#' `sessionstatediff_globalenv`, `sessionstatediff_attachments`, or
+#' `sessionstatediff_max_rows` field (respectively); if neither is set, a
+#' built-in default is used: `TRUE` for `changed_only`, `10` for
+#' `max_rows`, and the same `packages`/`globalenv`/`attachments` defaults
+#' as `sessioncheck_sessionstate` objects use (see above). `max_rows`
+#' applies independently to every `added`/`removed`/`modified` block, and
+#' does not affect the underlying object -- `as.data.frame()` on a
+#' `sessioncheck_sessionstatediff` always returns every row.
 #'
 #' @name display_methods
 
 #' @rdname display_methods
 #' @exportS3Method base::format
 format.sessioncheck_status <- function(x, ...) {
-  if (x$type == "namespace")   prefix <- "Loaded namespaces:"
-  if (x$type == "package")     prefix <- "Attached packages:"
-  if (x$type == "globalenv")   prefix <- "Objects in global environment:"
-  if (x$type == "attachment")  prefix <- "Attached environments:"
-  if (x$type == "sessiontime") prefix <- "Session runtime:"
-  if (x$type == "options")     prefix <- "Unexpected options:"
-  if (x$type == "sysenv")      prefix <- "Unexpected system environment variables:"
-  if (x$type == "locale")      prefix <- "Unexpected locale settings:"
-  .message_text(prefix, x$status)
+  prefix <- .status_prefix[[x$type]]
+  clean_message <- .status_clean_message[[x$type]]
+  if (x$type %in% c("options", "sysenv", "locale")) {
+    return(.message_text_detail(prefix, x$status, clean_message = clean_message))
+  }
+  if (x$type == "sessiontime") {
+    return(.message_text_sessiontime(x$status, prefix, clean_message))
+  }
+  if (x$type == "working_directory") {
+    return(.message_text_working_directory(x$status, prefix, clean_message))
+  }
+  .message_text(prefix, x$status, clean_message = clean_message)
 }
 
 #' @rdname display_methods
@@ -45,7 +219,9 @@ format.sessioncheck_status <- function(x, ...) {
 format.sessioncheck_sessioncheck <- function(x, ...) {
   msg <- vapply(x, format, "")
   if (length(msg) > 0L) {
-    msg <- paste("-", msg)
+    # no "- " list marker needed here: each element of msg already starts
+    # with a tick/cross symbol from .message_text(), which now serves that
+    # purpose
     msg <- paste(msg, collapse = "\n")
     msg <- paste("Session check results:", msg, sep = "\n")
   }
@@ -69,12 +245,59 @@ print.sessioncheck_sessioncheck <- function(x, ...) {
 
 #' Coerce session check object to a data frame
 #'
-#' @param x An object of class `sessioncheck_status` or `sessioncheck_sessioncheck`
+#' @description
+#' S3 `as.data.frame()` methods for the three classes this package defines,
+#' letting each be dropped into ordinary data frame workflows (filtering,
+#' joining, export) instead of only being inspected via `print()`/`format()`.
+#'
+#' @param x An object of class `sessioncheck_status`, `sessioncheck_sessioncheck`,
+#' `sessioncheck_sessionstate`, or `sessioncheck_sessionstatediff`
 #' @param row.names Ignored
 #' @param optional Ignored
+#' @param which For `sessioncheck_sessionstate` objects, which tabular
+#' component to return: one of `"packages"` (the default), `"globalenv"`,
+#' or `"attachments"`. For `sessioncheck_sessionstatediff` objects, the same
+#' three section names instead select a long-format diff table (see
+#' Details); the default is likewise `"packages"`. Ignored for other
+#' classes.
 #' @param ... Ignored
 #'
 #' @returns A data frame
+#'
+#' @details
+#' For `sessioncheck_status` and `sessioncheck_sessioncheck` objects, this
+#' coercion is lossless: every entity and status recorded in `x` appears as a
+#' row in the result. That guarantee does not extend to
+#' `sessioncheck_sessionstate` objects: [sessionstate()] captures more than
+#' any single rectangular table can hold, mixing scalar fields (`platform`,
+#' `locale`, `matrix`, `document`, `machine`, `git`, `timing`, `rng`), a bare
+#' character vector (`libpaths`), and three differently-shaped tables
+#' (`packages`, `globalenv`, `attachments`). `as.data.frame()` returns
+#' whichever one of those three tables `which` selects; none of the scalar
+#' fields or `libpaths` are represented in the result. Use `x$platform`,
+#' `x$machine`, `x$git`, `x$libpaths`, etc. (or `unclass(x)` for everything
+#' at once) to access those directly.
+#'
+#' `sessioncheck_sessionstatediff` objects (from [compare_sessionstates()])
+#' coerce differently again: each `which` selects a single long-format
+#' table with one row per key (`package`/`name`/`name`, for
+#' `"packages"`/`"globalenv"`/`"attachments"` respectively) and tracked
+#' field, with columns `<key>`, `change` (`"added"`, `"removed"`, or
+#' `"modified"`), `field`, `old`, and `new`. A key present in only one
+#' snapshot contributes one row per tracked field, all with the same
+#' `change`, and `old`/`new` `NA` on whichever side it didn't exist; a key
+#' present in both snapshots contributes a row only for fields that
+#' actually changed. The tracked fields are
+#' `attached`/`ondisk_version`/`loaded_version`/`source` for `"packages"`,
+#' `class`/`size`/`hash` for `"globalenv"`, and `type` for `"attachments"`
+#' -- the same fields [compare_sessionstates()] tracks for its own
+#' `modified` tables. `"globalenv"` additionally has a `verified` column
+#' (`NA` for `"added"`/`"removed"` rows, since there is nothing to verify
+#' when a key only exists in one snapshot; `TRUE`/`FALSE` for `"modified"`
+#' rows -- see [compare_sessionstates()] for what `verified` means).
+#' `"attachments"` never has `"modified"` rows, since a `type` change for an
+#' existing search-path entry isn't a realistic scenario.
+#'
 #' @name coercion_methods
 
 #' @rdname coercion_methods
@@ -95,5 +318,3 @@ as.data.frame.sessioncheck_sessioncheck <- function(x, row.names = NULL, optiona
   rownames(dd) <- NULL
   dd
 }
-
-
